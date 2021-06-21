@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2015",
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "stripInternal": true,
+    "strictNullChecks": false,
+    "importsNotUsedAsValues": "error",
+    "strict": true,
+    "types": ["node"],
+    "lib": ["es6"],
+  },
+  "exclude": ["node_modules"]
+}
