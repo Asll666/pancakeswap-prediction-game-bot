@@ -3,8 +3,9 @@ import { contractWithSigner } from "../contract/contract";
 import type { BetType } from "../types/bet";
 import { numberFixed } from "../utils/number";
 import { getBSCScan } from "../utils/getBSCScan";
+import { getLastGas } from "../contract/gas";
 
-export const bet = ({
+export const bet = async ({
   position,
   amount,
   gasRate = 1,
@@ -13,11 +14,16 @@ export const bet = ({
   amount: number; // 投注额
   gasRate?: number; // gas 费率，默认为1，若为 1.5 则是 1.5 倍 gas 费
 }) => {
-  const gas = numberFixed(0.000000005 * gasRate, 12);
-  console.log("投注", { position, amount, gasRate }, gas.toLocaleString());
+  const initialGas = await getLastGas();
+  const gas = numberFixed(initialGas * gasRate, 12);
+  console.log(
+    "投注",
+    { position, amount, gasRate },
+    gas.toFixed().replace(/0+$/, "")
+  );
   return contractWithSigner[position]({
     value: utils.parseUnits(amount.toString(), 18),
-    gasPrice: utils.parseUnits("0.000000006", 18),
+    gasPrice: utils.parseUnits(gas.toFixed(12).replace(/0+$/, ""), 18),
   })
     .then((tx: any) => {
       console.log(
@@ -28,6 +34,5 @@ export const bet = ({
       );
       return tx.wait();
     })
-    .then()
     .catch((err: any) => console.error("投注失败", err));
 };
