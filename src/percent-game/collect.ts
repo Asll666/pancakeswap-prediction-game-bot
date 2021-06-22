@@ -1,6 +1,7 @@
 import { contractWithSigner } from "../contract/contract";
 import { getBSCScan } from "../utils/getBSCScan";
 
+
 export const collect = (epoch: number) => {
   return contractWithSigner.functions
     .claim(epoch)
