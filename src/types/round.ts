@@ -4,8 +4,6 @@ export enum BetPosition {
   HOUSE = "House",
 }
 
-
-
 export interface Market {
   id: string;
   paused: boolean;

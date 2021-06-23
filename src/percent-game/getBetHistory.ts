@@ -68,4 +68,6 @@ export const getUnCollectHistory = () =>
   getBetHistory({
     user,
     claimed: getClaimParam(HistoryFilter.UNCOLLECTED),
-  });
+  }).then(
+    (data) => data.filter((item) => item.position === item.round.position) // 查询结果存在问题，需要过滤一次
+  );

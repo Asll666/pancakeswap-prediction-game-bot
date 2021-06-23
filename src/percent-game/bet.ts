@@ -1,9 +1,11 @@
 import { utils } from "ethers";
 import { contractWithSigner } from "../contract/contract";
-import type { BetType } from "../types/bet";
+import { BetType } from "../types/bet";
 import { numberFixed } from "../utils/number";
 import { getBSCScan } from "../utils/getBSCScan";
 import { getLastGas } from "../contract/gas";
+import type { Round } from "../types/round";
+import { getMultiplier } from "../utils/getMultiplier";
 
 export const bet = async ({
   position,
@@ -35,4 +37,21 @@ export const bet = async ({
       return tx.wait();
     })
     .catch((err: any) => console.error("投注失败", err));
+};
+
+export const betSmall = ({
+  amount,
+  round,
+}: {
+  amount: number;
+  round: Round;
+}) => {
+  const bearMultiplier = getMultiplier(round.totalAmount, round.bearAmount);
+  const bullMultiplier = getMultiplier(round.totalAmount, round.bullAmount);
+
+  return bet({
+    position: bullMultiplier < bearMultiplier ? BetType.BULL : BetType.BEAR,
+    amount,
+    gasRate: 1.5,
+  });
 };
