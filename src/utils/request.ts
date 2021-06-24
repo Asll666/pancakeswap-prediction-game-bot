@@ -35,9 +35,13 @@ export function request<T = any, V = Variables>(
       query: document,
       variables,
     },
-  }).then((res) => {
-    return res.data.data;
-  });
+  })
+    .then((res) => {
+      return res.data.data;
+    })
+    .catch((err) => {
+      console.error(url + "请求异常\r\n", err.message);
+    });
 
   const client = new GraphQLClient(url, { fetch: axios });
 
