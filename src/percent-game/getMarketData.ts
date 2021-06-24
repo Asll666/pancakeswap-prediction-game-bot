@@ -145,7 +145,10 @@ export const getMarketData = async (
  * 获取当前可投注对局
  */
 export const getActiveBetRound = () =>
-  getMarketData(1).then((res) => res.rounds[0]);
+  getMarketData(1).then((res) => ({
+    round: res.rounds[0],
+    market: res.market,
+  }));
 
 /**
  * 获取当前进行中对局

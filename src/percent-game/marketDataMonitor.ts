@@ -1,6 +1,7 @@
 import { getActiveBetRound } from "./getMarketData";
-import type { Round } from "../types/round";
+import type { Market, Round } from "../types/round";
 import { sleep } from "../utils/promise-utils";
+import { calcBalanceTime } from "./round";
 
 type OnRoundChange = (round: Round) => any;
 
@@ -13,6 +14,8 @@ export class MarketDataMonitor {
   currentRound: Round = null;
   // 上次对局
   lastRound: Round = null;
+  // 轮询间隔周期
+  pollingTime = 500;
 
   _onRoundChange: OnRoundChange;
   _onRoundEnd: OnRoundEnd;
@@ -56,11 +59,46 @@ export class MarketDataMonitor {
     }
   }
 
+  /**
+   * 设定
+   * @param round
+   * @param market
+   */
+  setPollingTime(round: Round, market: Market) {
+    // 市场暂停，减缓请求频率
+    if (market.paused) {
+      return (this.pollingTime = 10000);
+    }
+
+    const balanceTime = calcBalanceTime(round);
+
+    if (balanceTime > 100) {
+      return (this.pollingTime = 5000);
+    }
+
+    if (balanceTime > 20) {
+      return (this.pollingTime = 2000);
+    }
+
+    if (balanceTime > 5) {
+      return (this.pollingTime = 1000);
+    }
+
+    if (balanceTime > 1) {
+      return (this.pollingTime = 500);
+    }
+
+    return (this.pollingTime = 100);
+  }
+
   async polling(): Promise<any> {
-    getActiveBetRound().then((round) => this.callback(round));
+    getActiveBetRound().then(({ round, market }) => {
+      this.setPollingTime(round, market);
+      return this.callback(round);
+    });
     // 轮询器的间隔
     // 加速并发请求数量，所以不需要等上次结束
-    await sleep(200);
+    await sleep(this.pollingTime);
     return this.polling();
   }
 }
