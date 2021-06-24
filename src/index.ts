@@ -1,11 +1,14 @@
 import { MarketDataMonitor } from "./percent-game/marketDataMonitor";
-import { betSmall } from "./percent-game/bet";
+import { BetResponseCode, betSmall } from "./percent-game/bet";
 import { getUnCollectHistory } from "./percent-game/getBetHistory";
 import { collect } from "./percent-game/collect";
 import { getMultiplier } from "./utils/getMultiplier";
 import { numberFixed } from "./utils/number";
+import type { Round } from "./types/round";
 
 let testBetTime = 10;
+
+let betObject: { [key: string]: Round } = {};
 
 new MarketDataMonitor({
   onRoundChange: (round) => {
@@ -22,9 +25,13 @@ new MarketDataMonitor({
 
     if (totalAmount > 40 && testBetTime > 0) {
       betSmall({ amount: 0.005, round })
-        .then(() => {
-          console.log("😮😮😮😮😮😮😮😮投注成功", round.id);
-          testBetTime--;
+        .then((res) => {
+          if (res.code === BetResponseCode.SUCCESS) {
+            console.log("😮😮😮😮😮😮😮😮投注成功", round.id);
+            testBetTime--;
+          } else {
+            console.error("😡😡😡😡😡😡投注失败， 看上游！");
+          }
         })
         .catch((err) => console.error("😡😡😡😡😡😡投注失败", err.message));
     }
