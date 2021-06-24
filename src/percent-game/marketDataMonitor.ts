@@ -80,12 +80,12 @@ export class MarketDataMonitor {
       return (this.pollingTime = 2000);
     }
 
-    if (balanceTime > 5) {
-      return (this.pollingTime = 1000);
+    if (balanceTime > 10) {
+      return (this.pollingTime = 500);
     }
 
-    if (balanceTime > 1) {
-      return (this.pollingTime = 500);
+    if (balanceTime > 5) {
+      return (this.pollingTime = 300);
     }
 
     return (this.pollingTime = 100);
