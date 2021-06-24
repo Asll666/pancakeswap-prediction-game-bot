@@ -3,7 +3,8 @@ import {
   MarketResponse,
   RoundResponse,
 } from "../utils/queries";
-import request, { gql } from "graphql-request";
+import { gql } from "graphql-request";
+import { request } from "../utils/request";
 import type { Bet, Market, Round } from "../types/round";
 import { GRAPH_API_PREDICTION } from "../config/endpoints";
 import { BetPosition } from "../types/round";

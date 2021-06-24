@@ -1,4 +1,6 @@
-import request, { gql } from "graphql-request";
+import { gql } from "graphql-request";
+import { request } from "../utils/request";
+
 import {
   BetResponse,
   getBetBaseFields,
