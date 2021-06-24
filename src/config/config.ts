@@ -1,6 +1,12 @@
 const config = require("../../project-config.json");
+const { privateKey, account, proxy } = config;
 
 export default {
-  wallet: config.privateKey as string,
-  account: config.account.toLowerCase(),
+  wallet: privateKey as string,
+  account: account.toLowerCase(),
+  proxy: {
+    host: proxy.host,
+    port: proxy.port,
+    auth: proxy.auth,
+  },
 };
