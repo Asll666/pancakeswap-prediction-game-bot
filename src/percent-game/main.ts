@@ -49,6 +49,7 @@ new MarketDataMonitor({
       }
     }
   },
+
   onRoundEnd: (round, next) => {
     console.log(
       `========游戏结束，${round.id}已结束, ${next.id}已开始========`
@@ -64,5 +65,9 @@ new MarketDataMonitor({
         }
       }
     });
+  },
+
+  onNearsAnEnd: () => {
+    return false;
   },
 });

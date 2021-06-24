@@ -9,6 +9,8 @@ type OnRoundEnd = (round: Round, next: Round) => any;
 
 type OnRoundStart = (round: Round, last: Round) => any;
 
+type OnNearsAnEnd = (round: Round, time: number) => boolean;
+
 export class MarketDataMonitor {
   // 当前对局
   currentRound: Round = null;
@@ -19,20 +21,29 @@ export class MarketDataMonitor {
 
   _onRoundChange: OnRoundChange;
   _onRoundEnd: OnRoundEnd;
+  _onNearsAnEnd: OnNearsAnEnd;
+  private nearsAnEndAlarmMap: { [key: string]: boolean } = {};
 
   constructor({
     onRoundChange,
     onRoundEnd,
+    onNearsAnEnd,
   }: {
     onRoundChange: OnRoundChange;
     onRoundEnd: OnRoundEnd;
+    onNearsAnEnd: OnNearsAnEnd;
   }) {
     this._onRoundChange = onRoundChange;
     this._onRoundEnd = onRoundEnd;
+    this._onNearsAnEnd = onNearsAnEnd;
     this.polling();
   }
 
-  callback(curRound: Round) {
+  /**
+   * 投注对局数据变化回调
+   * @param curRound
+   */
+  dataChangeCallback(curRound: Round) {
     if (!this.currentRound) {
       this.currentRound = curRound;
     }
@@ -56,6 +67,20 @@ export class MarketDataMonitor {
       this.currentRound = curRound;
       // 通知订阅事件
       this._onRoundChange(curRound);
+    }
+  }
+
+  /**
+   * 对局即将结束回调
+   */
+  nearsAnEndCallback(round: Round) {
+    const balanceTime = calcBalanceTime(round);
+    if (balanceTime < 3 && !this.nearsAnEndAlarmMap[round.id]) {
+      // 如果回调返回为true，则同场次不再调用回调
+      if (this._onNearsAnEnd(round, balanceTime)) {
+        this.nearsAnEndAlarmMap[round.id] = true;
+        console.log("停止记录", round.id);
+      }
     }
   }
 
@@ -88,13 +113,22 @@ export class MarketDataMonitor {
       return (this.pollingTime = 300);
     }
 
-    return (this.pollingTime = 100);
+    if (balanceTime > 3 && balanceTime > -10) {
+      return (this.pollingTime = 100);
+    }
+    // 超过 10 秒代表这次结算出现缓慢，所以降低频率
+    if (balanceTime <= -10) {
+      return (this.pollingTime = 500);
+    }
+
+    return 50;
   }
 
   async polling(): Promise<any> {
     getActiveBetRound().then(({ round, market }) => {
       this.setPollingTime(round, market);
-      return this.callback(round);
+      this.nearsAnEndCallback(round);
+      return this.dataChangeCallback(round);
     });
     // 轮询器的间隔
     // 加速并发请求数量，所以不需要等上次结束
