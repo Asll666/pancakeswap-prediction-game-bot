@@ -1,7 +1,7 @@
 import { getActiveBetRound } from "./getMarketData";
 import type { Market, Round } from "../types/round";
 import { sleep } from "../utils/promise-utils";
-import { calcBalanceTime } from "./round";
+import { calcBalanceTime, calcBalanceTimeMs } from "./round";
 
 type OnRoundChange = (round: Round) => any;
 
@@ -73,9 +73,10 @@ export class MarketDataMonitor {
   /**
    * 对局即将结束回调
    */
-  nearsAnEndCallback(round: Round) {
-    const balanceTime = calcBalanceTime(round);
-    if (balanceTime < 3 && !this.nearsAnEndAlarmMap[round.id]) {
+  nearsAnEndCallback() {
+    const round = this.currentRound;
+    const balanceTime = calcBalanceTimeMs(round);
+    if (balanceTime < 3000 && !this.nearsAnEndAlarmMap[round.id]) {
       // 如果回调返回为true，则同场次不再调用回调
       if (this._onNearsAnEnd(round, balanceTime)) {
         this.nearsAnEndAlarmMap[round.id] = true;
@@ -86,49 +87,43 @@ export class MarketDataMonitor {
 
   /**
    * 设定
-   * @param round
    * @param market
    */
-  setPollingTime(round: Round, market: Market) {
+  setPollingTime(market: Market) {
     // 市场暂停，减缓请求频率
     if (market.paused) {
-      return (this.pollingTime = 10000);
+      return 10000;
     }
 
-    const balanceTime = calcBalanceTime(round);
+    const balanceTime = calcBalanceTime(this.currentRound);
 
     if (balanceTime > 100) {
-      return (this.pollingTime = 5000);
+      return 5000;
     }
 
     if (balanceTime > 20) {
-      return (this.pollingTime = 2000);
+      return 2000;
     }
 
-    if (balanceTime > 10) {
-      return (this.pollingTime = 500);
+    if (balanceTime >= 5) {
+      return 300;
     }
 
-    if (balanceTime > 5) {
-      return (this.pollingTime = 300);
+    if (balanceTime < 5 && balanceTime > -10) {
+      return 100;
     }
 
-    if (balanceTime > 3 && balanceTime > -10) {
-      return (this.pollingTime = 100);
-    }
-    // 超过 10 秒代表这次结算出现缓慢，所以降低频率
-    if (balanceTime <= -10) {
-      return (this.pollingTime = 500);
-    }
-
-    return 50;
+    // 常规情况下
+    return 300;
   }
 
   async polling(): Promise<any> {
+    // const now = Date.now();
     getActiveBetRound().then(({ round, market }) => {
-      this.setPollingTime(round, market);
-      this.nearsAnEndCallback(round);
-      return this.dataChangeCallback(round);
+      this.dataChangeCallback(round);
+      this.nearsAnEndCallback();
+      this.pollingTime = this.setPollingTime(market);
+      // console.log("callback time: ", Date.now() - now);
     });
     // 轮询器的间隔
     // 加速并发请求数量，所以不需要等上次结束
