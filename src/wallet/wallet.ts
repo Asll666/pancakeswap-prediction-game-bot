@@ -1,6 +1,6 @@
 import { Wallet } from "ethers";
 import config from "../config/config";
-import { getBnbNumberFromHex } from "../utils/money";
+import { getCoinNumberFromHex } from "../utils/money";
 import { provider } from "../provider/provider";
 import { getHexString } from "../utils/hex";
 
@@ -11,7 +11,7 @@ wallet
   .then(({ _isBigNumber, _hex }) => {
     console.log(
       "钱包连接成功，当前余额",
-      getBnbNumberFromHex({ _hex, _isBigNumber })
+      getCoinNumberFromHex({ _hex, _isBigNumber })
     );
   })
   .catch((err) => {

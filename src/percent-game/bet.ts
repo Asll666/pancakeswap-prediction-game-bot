@@ -6,6 +6,7 @@ import { getBSCScan } from "../utils/getBSCScan";
 import { getLastGas } from "../contract/gas";
 import type { Round } from "../types/round";
 import { getMultiplier } from "../utils/getMultiplier";
+import { sleep } from "../utils/promise-utils";
 
 export enum BetResponseCode {
   FAILED,
@@ -69,19 +70,39 @@ export const bet = async ({
     });
 };
 
-export const betSmall = ({
-  amount,
-  round,
-}: {
-  amount: number;
-  round: Round;
-}) => {
+const getSmallPosition = (round: Round) => {
   const bearMultiplier = getMultiplier(round.totalAmount, round.bearAmount);
   const bullMultiplier = getMultiplier(round.totalAmount, round.bullAmount);
 
+  return bullMultiplier < bearMultiplier ? BetType.BULL : BetType.BEAR;
+};
+
+const getBigPosition = (round: Round) => {
+  const bearMultiplier = getMultiplier(round.totalAmount, round.bearAmount);
+  const bullMultiplier = getMultiplier(round.totalAmount, round.bullAmount);
+
+  return bullMultiplier < bearMultiplier ? BetType.BEAR : BetType.BULL;
+};
+
+interface BetParamsType {
+  amount: number;
+  round: Round;
+}
+
+export const betSmall = ({ amount, round }: BetParamsType) => {
   return bet({
-    position: bullMultiplier < bearMultiplier ? BetType.BULL : BetType.BEAR,
+    position: getSmallPosition(round),
     amount,
     gasRate: 1.2,
+  });
+};
+
+export const mockBet = (
+  { amount, round }: BetParamsType,
+  isBig = false
+): Promise<BetType> => {
+  return new Promise(async (resolve) => {
+    // await sleep(Math.round(Math.random() * 200) + 50);
+    resolve(isBig ? getBigPosition(round) : getSmallPosition(round));
   });
 };

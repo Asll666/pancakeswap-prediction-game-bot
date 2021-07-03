@@ -1,5 +1,5 @@
 import { gql } from "graphql-request";
-import { request } from "../utils/request";
+import { graphRequest } from "../utils/request";
 
 import {
   BetResponse,
@@ -20,7 +20,7 @@ export const getBetHistory = async (
   first = 3,
   skip = 0
 ): Promise<BetResponse[]> => {
-  const response = await request(
+  const response = await graphRequest(
     GRAPH_API_PREDICTION,
     gql`
           query getBetHistory($first: Int!, $skip: Int!, $where: Bet_filter) {

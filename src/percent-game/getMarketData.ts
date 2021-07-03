@@ -4,7 +4,7 @@ import {
   RoundResponse,
 } from "../utils/queries";
 import { gql } from "graphql-request";
-import { request } from "../utils/request";
+import { graphRequest } from "../utils/request";
 import type { Bet, Market, Round } from "../types/round";
 import { GRAPH_API_PREDICTION } from "../config/endpoints";
 import { BetPosition } from "../types/round";
@@ -117,7 +117,7 @@ export const getMarketData = async (
   rounds: Round[];
   market: Market;
 }> => {
-  const response = (await request(
+  const response = (await graphRequest(
     GRAPH_API_PREDICTION,
     gql`
         query getMarketData {
