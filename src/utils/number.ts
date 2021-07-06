@@ -28,3 +28,6 @@ export function zeroFill(number: NumberTransformParams, length = 2): string {
   }
   return `${numArr[0]}.${decimal}`;
 }
+
+export const stringNumToNumber = (str: string, length?: number): number =>
+  numberFixed(str.replace(/[^0-9.]/g, ""), length);

@@ -23,8 +23,8 @@ export interface PredictionListenerType<T> {
 
 export type BetListenerEvent = (
   from: string,
-  roundId: BigNumberType,
-  value: BigNumberType,
+  roundId: BigNumberType | string,
+  value: BigNumberType | number,
   detail: PredictionListenerType<
     [
       // @ts-ignore
@@ -35,7 +35,7 @@ export type BetListenerEvent = (
       currentEpoch: BigNumberType[],
       amount: BigNumberType[]
     ]
-  >,
+  > | null,
   position: BetPosition
 ) => any;
 

@@ -16,6 +16,7 @@ import {
   getIDFromHex,
   getPriceFromHex,
 } from "../utils/money";
+import { getBSCPending, getBSCCompleted, bscObservable } from "./getBSC";
 
 const { parseUnits, formatUnits } = utils;
 
@@ -59,6 +60,7 @@ export class MarketDataMonitor {
     // 自建监听器
     this.addBlockChainEvent();
     // 定时器
+    this.pollingBSC();
     // 轮询三方
     // this.polling();
   }
@@ -112,9 +114,9 @@ export class MarketDataMonitor {
     detail,
     position
   ) => {
-    const id = getIDFromHex(roundId);
+    const id = typeof roundId === "string" ? roundId : getIDFromHex(roundId);
     const cur = this.rounds[id];
-    const num = getCoinNumberFromHex(value);
+    const num = typeof value === "number" ? value : getCoinNumberFromHex(value);
     // console.log("投注变更", id, num);
     if (!cur) {
       // 暂未记录起始记录
@@ -242,15 +244,29 @@ export class MarketDataMonitor {
 
   addBlockChainEvent() {
     contractWithSigner
-      .on("BetBull", (from, roundId, value, detail) =>
-        this.onChainBetEvent(from, roundId, value, detail, BetPosition.BULL)
-      )
-      .on("BetBear", (from, roundId, value, detail) =>
-        this.onChainBetEvent(from, roundId, value, detail, BetPosition.BEAR)
-      )
+      // .on("BetBull", (from, roundId, value, detail) =>
+      //   this.onChainBetEvent(from, roundId, value, detail, BetPosition.BULL)
+      // )
+      // .on("BetBear", (from, roundId, value, detail) =>
+      //   this.onChainBetEvent(from, roundId, value, detail, BetPosition.BEAR)
+      // )
       .on("EndRound", this.onChainRoundEnd)
       .on("LockRound", this.onChainRoundLock)
       .on("StartRound", this.onChainRoundStart);
+  }
+
+  async pollingBSC(): Promise<any> {
+    bscObservable().subscribe((cur) => {
+      if (this.currentRound) {
+        this.onChainBetEvent(
+          "",
+          this.currentRound.id,
+          cur.value,
+          null,
+          cur.position
+        );
+      }
+    });
   }
 
   /**

@@ -83,7 +83,7 @@ new MarketDataMonitor({
 
     const color = (focus: boolean, str: any) => (focus ? chalk.blue(str) : str);
 
-    if (balanceTime < 5000) {
+    if (balanceTime < 500000) {
       console.log(
         `#${id} 数据变动，总计${round.totalBets}次$${zeroFill(
           numberFixed(totalAmount, 3),
