@@ -3,10 +3,9 @@ import { contractWithSigner } from "../contract/contract";
 import { BetType } from "../types/bet";
 import { numberFixed } from "../utils/number";
 import { getBSCScan } from "../utils/getBSCScan";
-import { getLastGas } from "../contract/gas";
+import { getReasonableLimit, getReasonablePrice } from "../contract/gas";
 import type { Round } from "../types/round";
 import { getMultiplier } from "../utils/getMultiplier";
-import { sleep } from "../utils/promise-utils";
 
 export enum BetResponseCode {
   FAILED,
@@ -21,30 +20,26 @@ export interface BetResponseType {
 export const bet = async ({
   position,
   amount,
-  gasRate = 1,
 }: {
   position: BetType; // 投注方向
   amount: number; // 投注额
-  gasRate?: number; // gas 费率，默认为1，若为 1.5 则是 1.5 倍 gas 费
 }): Promise<BetResponseType> => {
-  const initialGas = await getLastGas();
-  const gas = numberFixed(initialGas * gasRate, 12);
-  console.log(
-    "投注",
-    { position, amount, gasRate },
-    gas.toFixed().replace(/0+$/, "")
-  );
+  const [gasPrice, gasLimit] = await Promise.all([
+    getReasonablePrice(),
+    getReasonableLimit(),
+  ]);
+  console.log("🧐 投注", { position, amount, gasPrice });
   return contractWithSigner[position]({
     value: utils.parseUnits(amount.toString(), 18),
-    gasPrice: utils.parseUnits(gas.toFixed(12).replace(/0+$/, ""), 18),
-    gasLimit: 120000,
+    gasPrice: utils.parseUnits(gasPrice.toFixed(12).replace(/0+$/, ""), 18),
+    gasLimit,
   })
     .then((tx: any) => {
       console.log(
-        "尝试投注，链地址",
+        "😳 尝试投注，链地址",
         getBSCScan(tx.hash),
         `投注金额 ${amount}`,
-        `GAS FEE ${gas}`
+        `GAS FEE ${numberFixed(gasPrice * gasLimit, 4)}`
       );
       return tx
         .wait()
@@ -55,7 +50,7 @@ export const bet = async ({
           };
         })
         .catch((err: any) => {
-          console.error("投注失败，打包！", err);
+          console.error("🥵 投注失败，打包！", err);
           return {
             code: BetResponseCode.FAILED,
             hash: tx.hash,
@@ -63,7 +58,7 @@ export const bet = async ({
         });
     })
     .catch((err: any) => {
-      console.error("投注失败", err);
+      console.error("🥵 投注失败", err);
       return {
         code: BetResponseCode.FAILED,
       };
@@ -93,7 +88,6 @@ export const betSmall = ({ amount, round }: BetParamsType) => {
   return bet({
     position: getSmallPosition(round),
     amount,
-    gasRate: 1.4,
   });
 };
 

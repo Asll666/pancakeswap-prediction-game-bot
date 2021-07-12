@@ -1,0 +1,16 @@
+{
+  "privateKey": "",
+  "account": "",
+  "proxy": {
+    "host": "",
+    "port": 0,
+    "auth": {
+      "username": "",
+      "password": ""
+    }
+  },
+  "telegram": {
+    "botToken": "",
+    "receiverId": ""
+  }
+}

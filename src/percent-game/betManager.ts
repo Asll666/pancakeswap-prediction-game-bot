@@ -1,5 +1,7 @@
 import { BetPosition, Round } from "../types/round";
 import { getMultiplier } from "../utils/getMultiplier";
+import { getReasonableLimit, getReasonablePrice } from "../contract/gas";
+import { numberFixed } from "../utils/number";
 
 interface BetHistory {
   amount: number;
@@ -20,8 +22,13 @@ interface BetEventParams {
 
 type BetEvent = (data: BetEventParams) => Promise<BetHistory | null>;
 
-const HIGH_GAS = 0.00086;
-const NORMAL_GAS = 0.00004;
+let MOCK_BET_GAS = 0.00086;
+
+Promise.all([getReasonablePrice(), getReasonableLimit()]).then(
+  ([price, limit]) => (MOCK_BET_GAS = numberFixed(price * limit, 8))
+);
+
+const MOCK_NORMAL_GAS = 0.00004;
 
 export class BetManager {
   // 投注事件
@@ -125,7 +132,7 @@ export class BetManager {
    * @private
    */
   private betRecord({ amount, id, position, isWin, counterparty }: BetResult) {
-    this.currentBalance = this.currentBalance - (amount + HIGH_GAS);
+    this.currentBalance = this.currentBalance - (amount + MOCK_BET_GAS);
 
     this.betHistory[id] = {
       id,
@@ -155,7 +162,7 @@ export class BetManager {
         );
     // 记录余额
     this.currentBalance =
-      this.currentBalance + betHistory.amount * multiplier - NORMAL_GAS;
+      this.currentBalance + betHistory.amount * multiplier - MOCK_NORMAL_GAS;
   }
 }
 

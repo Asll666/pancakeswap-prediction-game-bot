@@ -1,5 +1,6 @@
 import { appendFile } from "fs";
 import { join } from "path";
+import * as chalk from "chalk";
 
 export function log(...args: Array<string | number>) {
   console.log.apply(console, args);
@@ -21,3 +22,6 @@ export function log(...args: Array<string | number>) {
     );
   });
 }
+
+export const color = (focus: boolean, str: any) =>
+  focus ? chalk.blue(str) : str;

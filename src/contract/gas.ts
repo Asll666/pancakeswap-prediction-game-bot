@@ -1,5 +1,9 @@
-let gas = 0.000000005;
+const gasPrice = 0.000000007;
+const gasLimit = 120000;
 
-export const getLastGas = async () => {
-  return Promise.resolve(gas);
-};
+// Todo here
+// 未来需要扩展为动态获取最新链上的推荐费率
+
+export const getReasonablePrice = async (): Promise<number> => gasPrice;
+
+export const getReasonableLimit = async (): Promise<number> => gasLimit;

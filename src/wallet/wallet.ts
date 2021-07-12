@@ -6,15 +6,15 @@ import { getHexString } from "../utils/hex";
 
 export const wallet = new Wallet(getHexString(config.wallet), provider);
 
-wallet
-  .getBalance()
-  .then(({ _isBigNumber, _hex }) => {
-    console.log(
-      "钱包连接成功，当前余额",
+export const getBalance = () =>
+  wallet
+    .getBalance()
+    .then(({ _isBigNumber, _hex }) =>
       getCoinNumberFromHex({ _hex, _isBigNumber })
-    );
-  })
-  .catch((err) => {
-    console.error(err);
-    throw new Error("钱包连接失败" + err.message);
-  });
+    )
+    .catch((err) => {
+      console.error(err);
+      throw new Error("钱包连接失败" + err.message);
+    });
+
+getBalance().then((money) => console.log("钱包连接成功，当前余额", money));

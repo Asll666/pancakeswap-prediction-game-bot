@@ -46,6 +46,7 @@ export class MarketDataMonitor {
   _onRoundChange: OnRoundChange;
   _onRoundEnd: OnRoundEnd;
   _onNearsAnEnd: OnNearsAnEnd;
+  public nearsAnEndTime: number;
   // 对局记录
   private rounds: { [id: string]: Round } = {};
   private nearsAnEndAlarmMap: { [key: string]: boolean } = {};
@@ -54,14 +55,17 @@ export class MarketDataMonitor {
     onRoundChange,
     onRoundEnd,
     onNearsAnEnd,
+    nearsAnEndTime = 3000,
   }: {
     onRoundChange: OnRoundChange;
     onRoundEnd: OnRoundEnd;
     onNearsAnEnd: OnNearsAnEnd;
+    nearsAnEndTime?: number;
   }) {
     this._onRoundChange = onRoundChange;
     this._onRoundEnd = onRoundEnd;
     this._onNearsAnEnd = onNearsAnEnd;
+    this.nearsAnEndTime = nearsAnEndTime;
     // 自建监听器
     this.addBlockChainEvent();
     // 定时器
@@ -202,7 +206,7 @@ export class MarketDataMonitor {
       // 快结束时触发一次回调
       accurateSetTimeout(
         () => this._onNearsAnEnd(round),
-        (round.startAt + 5 * 60) * 1000 - Date.now() - 3500
+        (round.startAt + 5 * 60) * 1000 - Date.now() - this.nearsAnEndTime
       );
     });
   };
