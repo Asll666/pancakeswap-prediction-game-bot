@@ -53,7 +53,7 @@ interface TransactionBasicType {
   txn: string;
 }
 
-interface TransactionType extends TransactionDetailType, TransactionBasicType {}
+export interface TransactionType extends TransactionDetailType, TransactionBasicType {}
 
 /**
  * 详情列表迭代器
@@ -317,25 +317,30 @@ const createPollingListObservable = (
   );
 };
 
-export const bscObservable = () => {
-  const pollingCompleted$ = createPollingListObservable(
-    2000,
-    "https://bscscan.com/txs?a=0x516ffd7d1e0ca40b1879935b2de87cb20fc1124b",
-    getCompletedTransactions
-  );
+export const bscObservable = (
+  type: "completed" | "pending" = "completed",
+  time = 10000
+) => {
+  const polling$ =
+    type === "completed"
+      ? createPollingListObservable(
+          time,
+          "https://bscscan.com/txs?a=0x516ffd7d1e0ca40b1879935b2de87cb20fc1124b",
+          getCompletedTransactions
+        )
+      : createPollingListObservable(
+          time,
+          "https://bscscan.com/txsPending?a=0x516ffd7d1e0ca40b1879935b2de87cb20fc1124b",
+          getPendingTransaction,
+          true
+        );
 
-  const pollingPending$ = createPollingListObservable(
-    1000,
-    "https://bscscan.com/txsPending?a=0x516ffd7d1e0ca40b1879935b2de87cb20fc1124b",
-    getPendingTransaction,
-    true
-  );
-
-  return merge(pollingCompleted$, pollingPending$).pipe(
-    // tap((data) =>
-    //   console.log(new Date().toLocaleString(), "获取数据", data.txn)
-    // ),
-    mergeMap((data) => from(requestTransitionDetail(data.txn, data.value))),
+  return polling$.pipe(
+    tap((data) => {
+      type === "pending" &&
+        console.log(new Date().toLocaleString(), "获取数据", data.txn);
+    }),
+    mergeMap((data) => from(requestTransitionDetail(data.txn, data.value)))
     // tap((data) =>
     //   console.log(
     //     new Date().toLocaleString(),
@@ -347,5 +352,3 @@ export const bscObservable = () => {
     // )
   );
 };
-
-// bscObservable().subscribe(() => console.log("------------"));

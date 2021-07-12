@@ -31,7 +31,7 @@ const INITIAL_MONEY = 1;
 const betManager2 = new BetManager({
   initialMoney: INITIAL_MONEY,
   betEvent: async ({ betManager, round, counterparty }) => {
-    if (betManager.currentBalance < 0 || round.totalAmount < 10) {
+    if (betManager.currentBalance < 0 || round.totalAmount < 20) {
       return null;
     }
 
@@ -83,7 +83,7 @@ new MarketDataMonitor({
 
     const color = (focus: boolean, str: any) => (focus ? chalk.blue(str) : str);
 
-    if (balanceTime < 500000) {
+    if (balanceTime < 10000) {
       console.log(
         `#${id} 数据变动，总计${round.totalBets}次$${zeroFill(
           numberFixed(totalAmount, 3),

@@ -37,7 +37,7 @@ export const bet = async ({
   return contractWithSigner[position]({
     value: utils.parseUnits(amount.toString(), 18),
     gasPrice: utils.parseUnits(gas.toFixed(12).replace(/0+$/, ""), 18),
-    gasLimit: 150000,
+    gasLimit: 120000,
   })
     .then((tx: any) => {
       console.log(
@@ -93,7 +93,7 @@ export const betSmall = ({ amount, round }: BetParamsType) => {
   return bet({
     position: getSmallPosition(round),
     amount,
-    gasRate: 1.2,
+    gasRate: 1.4,
   });
 };
 

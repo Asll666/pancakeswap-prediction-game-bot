@@ -16,7 +16,12 @@ import {
   getIDFromHex,
   getPriceFromHex,
 } from "../utils/money";
-import { getBSCPending, getBSCCompleted, bscObservable } from "./getBSC";
+import {
+  getBSCPending,
+  getBSCCompleted,
+  bscObservable,
+  TransactionType,
+} from "./getBSC";
 
 const { parseUnits, formatUnits } = utils;
 
@@ -60,7 +65,7 @@ export class MarketDataMonitor {
     // 自建监听器
     this.addBlockChainEvent();
     // 定时器
-    this.pollingBSC();
+    // this.pollingBSC();
     // 轮询三方
     // this.polling();
   }
@@ -117,7 +122,7 @@ export class MarketDataMonitor {
     const id = typeof roundId === "string" ? roundId : getIDFromHex(roundId);
     const cur = this.rounds[id];
     const num = typeof value === "number" ? value : getCoinNumberFromHex(value);
-    // console.log("投注变更", id, num);
+    // console.log("投注变更", id, num, detail.transactionHash, detail.blockHash);
     if (!cur) {
       // 暂未记录起始记录
       console.log("未匹配到本地记录", id);
@@ -137,6 +142,21 @@ export class MarketDataMonitor {
   };
 
   /**
+   * 获取GRT查询时间
+   */
+  async getGRTDateTime(round: Round): Promise<{
+    round: Round;
+    market: Market;
+  }> {
+    const res = await getActiveBetRound();
+    if (res.round.id !== round.id) {
+      await sleep(2000);
+      return this.getGRTDateTime(round);
+    }
+    return res;
+  }
+
+  /**
    * 对局启动，可下注
    */
   onChainRoundStart: StartRoundListenerType = (
@@ -144,8 +164,8 @@ export class MarketDataMonitor {
     blockNumber,
     detail
   ) => {
-    console.log(new Date().toISOString() + "游戏开始");
     const id = getIDFromHex(roundId);
+    console.log(new Date().toISOString(), "游戏开始", id);
     const round: Round = {
       bearBets: 0,
       bearAmount: 0,
@@ -168,25 +188,23 @@ export class MarketDataMonitor {
     };
     this.rounds[id] = round;
     this.dataChangeCallback(round);
-    getActiveBetRound()
-      .then(async (res) => {
-        if (res.round.id !== round.id) {
-          await sleep(2000);
-          return getActiveBetRound();
-        }
-        return res;
-      })
-      .then((res) => {
-        console.log(
-          "本地记录时间与GRT区别",
-          res.round.id,
-          round.startAt,
-          res.round.startAt,
-          round.startAt - res.round.startAt
-        );
-      });
-    // 快结束时触发一次回调
-    accurateSetTimeout(() => this._onNearsAnEnd(round), 5 * 60 * 1000 - 2000);
+    this.getGRTDateTime(round).then((res) => {
+      console.log(
+        "本地记录时间与GRT区别",
+        res.round.id,
+        round.id,
+        round.startAt,
+        res.round.startAt,
+        round.startAt - res.round.startAt
+      );
+      // 修正时间
+      round.startAt = res.round.startAt;
+      // 快结束时触发一次回调
+      accurateSetTimeout(
+        () => this._onNearsAnEnd(round),
+        (round.startAt + 5 * 60) * 1000 - Date.now() - 3500
+      );
+    });
   };
 
   /**
@@ -201,7 +219,7 @@ export class MarketDataMonitor {
     const id = getIDFromHex(roundId);
     const block = getIDFromHex(blockNumber);
     const price = getPriceFromHex(lockPrice);
-    console.log(new Date().toISOString() + "游戏锁定", id, "锁定", price);
+    console.log(new Date().toISOString(), "游戏锁定", id, "锁定", price);
 
     const cur = this.rounds[id];
     if (cur) {
@@ -225,7 +243,8 @@ export class MarketDataMonitor {
     const price = getPriceFromHex(closePrice);
     const cur = this.rounds[id];
     console.log(
-      new Date().toISOString() + "游戏结束",
+      new Date().toISOString(),
+      "游戏结束",
       id,
       "结束价格",
       price,
@@ -244,29 +263,31 @@ export class MarketDataMonitor {
 
   addBlockChainEvent() {
     contractWithSigner
-      // .on("BetBull", (from, roundId, value, detail) =>
-      //   this.onChainBetEvent(from, roundId, value, detail, BetPosition.BULL)
-      // )
-      // .on("BetBear", (from, roundId, value, detail) =>
-      //   this.onChainBetEvent(from, roundId, value, detail, BetPosition.BEAR)
-      // )
+      .on("BetBull", (from, roundId, value, detail) =>
+        this.onChainBetEvent(from, roundId, value, detail, BetPosition.BULL)
+      )
+      .on("BetBear", (from, roundId, value, detail) =>
+        this.onChainBetEvent(from, roundId, value, detail, BetPosition.BEAR)
+      )
       .on("EndRound", this.onChainRoundEnd)
       .on("LockRound", this.onChainRoundLock)
       .on("StartRound", this.onChainRoundStart);
   }
 
+  pollingCallback(data: TransactionType) {
+    if (this.currentRound) {
+      this.onChainBetEvent(
+        "",
+        this.currentRound.id,
+        data.value,
+        null,
+        data.position
+      );
+    }
+  }
+
   async pollingBSC(): Promise<any> {
-    bscObservable().subscribe((cur) => {
-      if (this.currentRound) {
-        this.onChainBetEvent(
-          "",
-          this.currentRound.id,
-          cur.value,
-          null,
-          cur.position
-        );
-      }
-    });
+    bscObservable().subscribe((cur) => this.pollingCallback(cur));
   }
 
   /**

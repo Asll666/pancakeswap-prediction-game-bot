@@ -16,12 +16,14 @@ export const accurateSetTimeout = (
   timeout: number
 ) => {
   const end = Date.now() + timeout;
+  let handler: NodeJS.Timeout;
 
   const sleep = () => {
     const now = Date.now();
     const balance = end - now;
+    clearTimeout(handler);
     if (balance > 0) {
-      setTimeout(sleep, numberFixed(balance / 100, 0));
+      handler = setTimeout(sleep, numberFixed(balance / 100, 0));
     } else {
       callback();
     }
