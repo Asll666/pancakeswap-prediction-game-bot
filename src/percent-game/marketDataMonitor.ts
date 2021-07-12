@@ -66,12 +66,13 @@ export class MarketDataMonitor {
     this._onRoundEnd = onRoundEnd;
     this._onNearsAnEnd = onNearsAnEnd;
     this.nearsAnEndTime = nearsAnEndTime;
-    // 自建监听器
+    // 以下三种只能选一个
+    // 自建监听器( 推荐 )
     this.addBlockChainEvent();
-    // 定时器
+    // 轮询BSC
     // this.pollingBSC();
-    // 轮询三方
-    // this.polling();
+    // 轮询GRT
+    // this.pollingGRT();
   }
 
   /**
@@ -194,12 +195,9 @@ export class MarketDataMonitor {
     this.dataChangeCallback(round);
     this.getGRTDateTime(round).then((res) => {
       console.log(
-        "本地记录时间与GRT区别",
-        res.round.id,
-        round.id,
-        round.startAt,
-        res.round.startAt,
-        round.startAt - res.round.startAt
+        `本地记录时间 ${round.startAt} 与GRT时间 ${res.round.startAt}，偏差值${
+          round.startAt - res.round.startAt
+        }s`
       );
       // 修正时间
       round.startAt = res.round.startAt;
@@ -298,47 +296,44 @@ export class MarketDataMonitor {
    * 设定
    * @param market
    */
-  // setPollingTime(market: Market) {
-  //   // 市场暂停，减缓请求频率
-  //   if (market.paused) {
-  //     return 10000;
-  //   }
-  //
-  //   const balanceTime = calcBalanceTime(this.currentRound);
-  //
-  //   if (balanceTime > 100) {
-  //     return 5000;
-  //   }
-  //
-  //   if (balanceTime > 20) {
-  //     return 2000;
-  //   }
-  //
-  //   if (balanceTime >= 5) {
-  //     return 300;
-  //   }
-  //
-  //   if (balanceTime < 5 && balanceTime > -10) {
-  //     return 100;
-  //   }
-  //
-  //   // 常规情况下
-  //   return 300;
-  // }
+  setPollingTime(market: Market) {
+    // 市场暂停，减缓请求频率
+    if (market.paused) {
+      return 10000;
+    }
 
-  // async polling(): Promise<any> {
-  //   // const now = Date.now();
-  //   getActiveBetRound().then(({ round, market }) => {
-  //     this.dataChangeCallback(round);
-  //     this.nearsAnEndCallback();
-  //     this.pollingTime = this.setPollingTime(market);
-  //     // console.log("callback time: ", Date.now() - now);
-  //   });
-  //   // 轮询器的间隔
-  //   // 加速并发请求数量，所以不需要等上次结束
-  //   await sleep(this.pollingTime);
-  //   return this.polling();
-  // }
+    const balanceTime = calcBalanceTime(this.currentRound);
+
+    if (balanceTime > 100) {
+      return 5000;
+    }
+
+    if (balanceTime > 20) {
+      return 2000;
+    }
+
+    if (balanceTime >= 5) {
+      return 300;
+    }
+
+    if (balanceTime < 5 && balanceTime > -10) {
+      return 100;
+    }
+
+    // 常规情况下
+    return 300;
+  }
+
+  async pollingGRT(): Promise<any> {
+    getActiveBetRound().then(({ round, market }) => {
+      this.dataChangeCallback(round);
+      this.pollingTime = this.setPollingTime(market);
+    });
+    // 轮询器的间隔
+    // 加速并发请求数量，所以不需要等上次结束
+    await sleep(this.pollingTime);
+    return this.pollingGRT();
+  }
 }
 
 export default MarketDataMonitor;
